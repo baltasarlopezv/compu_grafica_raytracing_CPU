@@ -1,45 +1,32 @@
-import moderngl
+from moderngl import Attribute, Uniform
+import glm
+
 
 class ShaderProgram:
-    def __init__(self, ctx, vertex_path, fragment_path):
-        """
-        Inicializa el programa de shaders cargando los archivos vertex y fragment.
+    def __init__(self, ctx, vertex_shader_path, fragment_shader_path):
+        with open(vertex_shader_path) as file:
+            vertex_shader = file.read()
+        with open(fragment_shader_path) as file:
+            fragment_shader = file.read()
         
-        Args:
-            ctx: Contexto de ModernGL
-            vertex_path: Ruta al archivo del vertex shader
-            fragment_path: Ruta al archivo del fragment shader
-        """
-        self.ctx = ctx
+        self.prog = ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
         
-        # Cargar el código de los shaders desde archivos
-        with open(vertex_path, 'r') as f:
-            vertex_source = f.read()
+        attributes = []
+        uniforms = []
+        for name in self.prog:
+            member = self.prog[name]
+            if type(member) is Attribute:
+                attributes.append(name)
+            if type(member) is Uniform:
+                uniforms.append(name)
         
-        with open(fragment_path, 'r') as f:
-            fragment_source = f.read()
-        
-        # Crear el programa de shaders
-        self.program = self.ctx.program(
-            vertex_shader=vertex_source,
-            fragment_shader=fragment_source
-        )
-    
-    def use(self):
-        """Activa este programa de shaders para su uso."""
-        pass  # En ModernGL no es necesario hacer bind explícito
+        self.attributes = list(attributes)
+        self.uniforms = uniforms
     
     def set_uniform(self, name, value):
-        """
-        Establece el valor de un uniform del shader.
-        
-        Args:
-            name: Nombre del uniform
-            value: Valor a asignar
-        """
-        if name in self.program:
-            self.program[name].write(value.tobytes())
-    
-    def get_program(self):
-        """Retorna el objeto program de ModernGL."""
-        return self.program
+        if name in self.uniforms:
+            uniform = self.prog[name]
+            if isinstance(value, glm.mat4):
+                uniform.write(value.to_bytes())
+            elif hasattr(uniform, "value"):
+                uniform.value = value

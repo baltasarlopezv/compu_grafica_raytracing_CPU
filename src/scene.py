@@ -1,4 +1,5 @@
 from graphics import Graphics
+from raytracer import RayTracer
 import glm
 import math
 
@@ -9,10 +10,15 @@ class Scene:
         self.graphics = {}
         self.camera = camera
         self.time = 0.0
+        self.view = self.camera.get_view_matrix()
+        self.projection = self.camera.get_perspective_matrix()
     
-    def add_object(self, obj, shader_program):
-        self.objects.append(obj)
-        self.graphics[obj.name] = Graphics(self.ctx, shader_program, obj.vertices, obj.indices)
+    def add_object(self, model, material):
+        self.objects.append(model)
+        self.graphics[model.name] = Graphics(self.ctx, model, material)
+    
+    def start(self):
+        print("Start!")
     
     def on_mouse_click(self, u, v):
         ray = self.camera.raycast(u, v)
@@ -21,43 +27,35 @@ class Scene:
                 print(f"¡Golpeaste al objeto {obj.name}!")
     
     def render(self):
-        # Clear the screen
-        self.ctx.clear(0.1, 0.1, 0.1, 1.0)
-        self.ctx.enable(self.ctx.DEPTH_TEST)
-
-        # Update time for animations
-        self.time += 0.02
-
-        # Get camera matrices
-        view = self.camera.get_view_matrix()
-        projection = self.camera.get_perspective_matrix()
-
-        # Add rotation and movement to each object
-        for i, obj in enumerate(self.objects):
-            # Base movement for all cubes (left to right) - minimal movement
-            base_movement = math.sin(self.time) * 0.5
-            
-            # Rotation on their own axis
-            if obj.name == "Cube1":
-                obj.rotation.y += 1.0  # Cube1: clockwise rotation
-                # Move left to right, maintaining left position
-                obj.position.x = -2 + base_movement
-            elif obj.name == "Cube2":
-                obj.rotation.y -= 1.0  # Cube2: counterclockwise rotation
-                # Move left to right, maintaining right position
-                obj.position.x = 2 + base_movement
+        self.time += 0.01
+        for obj in self.objects:
+            if(obj.name != "Sprite"):
+                obj.rotation += glm.vec3(0.8, 0.6, 0.4)
+                obj.position.x += math.sin(self.time) * 0.01
             
             model = obj.get_model_matrix()
-            mvp = projection * view * model
-
-            # Set the MVP uniform
-            graphics_obj = self.graphics[obj.name]
-            if 'Mvp' in graphics_obj.vao.program:
-                graphics_obj.vao.program['Mvp'].write(mvp.to_bytes())
-
-            # Render
-            graphics_obj.vao.render()
+            mvp = self.projection * self.view * model
+            self.graphics[obj.name].render({'Mvp': mvp})
     
     def on_resize(self, width, height):
         self.ctx.viewport = (0, 0, width, height)
         self.camera.aspect = width / height if height != 0 else 1.0
+
+
+class RayScene(Scene):
+    def __init__(self, ctx, camera, width, height):
+        super().__init__(ctx, camera)
+        self.raytracer = RayTracer(camera, width, height)
+    
+    def start(self):
+        self.raytracer.render_frame(self.objects)
+        if "Sprite" in self.graphics:
+            self.graphics["Sprite"].update_texture("u_texture", self.raytracer.get_texture())
+    
+    def render(self):
+        super().render()
+    
+    def on_resize(self, width, height):
+        super().on_resize(width, height)
+        self.raytracer = RayTracer(self.camera, width, height)
+        self.start()

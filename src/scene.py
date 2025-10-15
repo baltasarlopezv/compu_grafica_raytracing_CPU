@@ -2,7 +2,9 @@ from graphics import Graphics
 from raytracer import RayTracer
 import glm
 import math
-
+import numpy as np
+from raytracer import RayTracerGPU
+from graphics import ComputeGraphics
 class Scene:
     def __init__(self, ctx, camera):
         self.ctx = ctx
@@ -33,7 +35,7 @@ class Scene:
         
         self.time += 0.01
         for obj in self.objects:
-            if(obj.name != "Sprite"):
+            if(obj.animated):
                 obj.rotation += glm.vec3(0.8, 0.6, 0.4)
                 obj.position.x += math.sin(self.time) * 0.01
             
@@ -63,3 +65,61 @@ class RayScene(Scene):
         super().on_resize(width, height)
         self.raytracer = RayTracer(self.camera, width, height)
         self.start()
+
+class RaySceneGPU(Scene):
+    def __init__(self, ctx, camera, width, height, output_model, output_material):
+        self.ctx = ctx
+        self.camera
+        self.width = width
+        self.height = height
+        self.raytracer = None
+
+        self.output_graphics = Graphics(ctx, output_model, output_material)
+        self.raytracer = RayTracerGPU(self.ctx, self.camera, self.width, self.height, self.output_graphics)
+        super().__init__(self.ctx, self.camera)
+    
+    def add_object(self, model, material):
+        self.objects.append(model)
+        self.graphics[model.name] = ComputeGraphics(self.ctx, model, material)
+
+    def start(self):
+        print("Start!")
+        self.primitives = []
+        n = len(self.objects)
+        self.models_f = np.zeros((n, 16), dtype='f4')
+        self.inv_f = np.zeros((n, 16), dtype='f4')
+        self.mats_f = np.zeros((n, 8), dtype='f4')  # reflectividad + colorRGB
+
+        self._update_matrix()
+        self._matrix_to_ssbo()
+
+    def render(self):
+        self.time += 0.01
+        for obj in self.objects:
+            if(obj.animated):
+                obj.rotation += glm.vec3(0.8, 0.6, 0.4)
+                obj.position.x += math.sin(self.time) * 0.01
+        if(self.raytracer is not None):
+            self._update_matrix()
+            self._matrix_to_ssbo()
+            self.raytracer.run()
+
+    def on_resize(self, width, height):
+        super().on_resize(width, height)
+        self.width, self.height = width, height
+        self.camera.aspect = width / height if height != 0 else 1.0
+
+    def _update_matrix(self):
+        self.primitives = []
+
+        for i, (name, graphics) in enumerate(self.graphics.items()):
+            graphics.create_primitive(self.primitives)
+            graphics.create_transformation_matrix(self.inv_f, i)
+            graphics.create_inverse_transformation_matrix(self.models_f, i)
+            graphics.create_material_matrix(self.mats_f, i)
+
+    def _matrix_to_ssbo(self):
+        self.raytracer.matrix_to_ssbo(self.models_f, 0)
+        self.raytracer.matrix_to_ssbo(self.inv_f, 1)
+        self.raytracer.matrix_to_ssbo(self.mats_f, 2)
+        self.raytracer.primitives_to_ssbo(self.primitives, 3)

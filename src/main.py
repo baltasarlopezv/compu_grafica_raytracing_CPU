@@ -6,12 +6,22 @@ from cube import Cube
 from quad import Quad
 from camera import Camera
 from scene import Scene, RayScene
+from pathlib import Path
 
 # -- Loop principal --
 WIDTH, HEIGHT = 800, 600
 window = Window(WIDTH, HEIGHT, "Basic Graphic Engine")
-shader_program = ShaderProgram(window.ctx, 'shaders/basic.vert', 'shaders/basic.frag')
-shader_program_skybox = ShaderProgram(window.ctx, 'shaders/sprite.vert', 'shaders/sprite.frag')
+
+# Carpeta base donde está este archivo
+BASE_DIR = Path(__file__).parent
+
+# Directorio de shaders
+shader_dir = BASE_DIR / "shaders"
+
+# Crear ShaderProgram con paths correctos
+shader_program = ShaderProgram(window.ctx, shader_dir / 'basic.vert', shader_dir / 'basic.frag')
+shader_program_skybox = ShaderProgram(window.ctx, shader_dir / 'sprite.vert', shader_dir / 'sprite.frag')
+
 skybox_texture = Texture(width=WIDTH, height=HEIGHT, channels_amount=3, color=(0, 0, 0))
 material = Material(shader_program)
 material_sprite = Material(shader_program_skybox, textures_data=[skybox_texture])

@@ -34,8 +34,8 @@ class Graphics:
             if name in self.__material.shader_program.prog:
                 self.__material.set_uniform(name, value)
         
-        for i, (name, (tex, tex_ctx)) in enumerate(self.__textures.items()):
-            tex_ctx.use(i)
+        for i, (name, (tex, texture_ctx)) in enumerate(self.__textures.items()):
+            texture_ctx.use(i)
             self.__material.shader_program.set_uniform(name, i)
         
         self.__vao.render()

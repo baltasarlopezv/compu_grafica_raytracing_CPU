@@ -27,6 +27,10 @@ class Scene:
                 print(f"¡Golpeaste al objeto {obj.name}!")
     
     def render(self):
+        # Clear the screen
+        self.ctx.clear(0.1, 0.1, 0.1, 1.0)
+        self.ctx.enable(self.ctx.DEPTH_TEST)
+        
         self.time += 0.01
         for obj in self.objects:
             if(obj.name != "Sprite"):

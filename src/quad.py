@@ -67,6 +67,13 @@ class Quad(Model):
     def check_hit(self, origin, direction):
         return self.__colision.check_hit(origin, direction)
    
+    def update(self, delta_time):
+        """
+        Actualiza el quad (generalmente no se anima, pero se incluye por consistencia).
+        """
+        if self.animated:
+            self.rotation.y += 20 * delta_time  # Rotación lenta
+   
     def get_model_matrix(self):
         model = glm.mat4(1)
         model = glm.translate(model, self.position)

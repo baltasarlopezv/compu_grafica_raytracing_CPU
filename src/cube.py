@@ -5,7 +5,11 @@ import glm
 
 
 class Cube(Model):
-    def __init__(self, position=(0,0,0), rotation=(0,0,0), scale=(1,1,1), name="cube", animated =  True, hittable=True):
+    """
+    Representa un cubo 3D en la escena.
+    Hereda de Model para manejar vértices, índices y texturas.
+    """
+    def __init__(self, position=(0,0,0), rotation=(0,0,0), scale=(1,1,1), name="cube", animated=True, hittable=True):
         self.name = name
         self.animated = animated
         self.position = glm.vec3(*position)
@@ -13,31 +17,34 @@ class Cube(Model):
         self.scale = glm.vec3(*scale)
         self.__colision = HitBoxOBB(get_model_matrix=lambda: self.get_model_matrix(), hittable=hittable)
 
-
+        # Array para crear el VBO: Vertex Buffer Object: almacena los vértices del cubo
         vertices = np.array([
             -1,-1,-1,  1,-1,-1,  1,1,-1, -1,1,-1,
             -1,-1,1,   1,-1,1,   1,1,1,  -1,1,1
         ], dtype='f4')
 
-
+        # Colores para cada vértice del cubo
         colors = np.array([
             1,0,0, 0,1,0, 0,0,1, 1,1,0,
             1,0,1, 0,1,1, 1,1,1, 0,0,0
         ], dtype='f4')
 
 
+        # Normales para iluminación
         normals = np.array([
             -1,-1,-1,  1,-1,-1,  1,1,-1, -1,1,-1,
             -1,-1,1,   1,-1,1,   1,1,1,  -1,1,1
         ], dtype='f4')
 
 
+        # Coordenadas de textura (UV)
         texcoords = np.array([
             0,0, 1,0, 1,1, 0,1,
             0,0, 1,0, 1,1, 0,1
         ], dtype='f4')
 
 
+        # Array para crear el IBO: Index Buffer Object: define las caras del cubo
         indices = np.array([
             0,1,2, 2,3,0, 4,5,6, 6,7,4,
             0,4,7, 7,3,0, 1,5,6, 6,2,1,
@@ -60,6 +67,15 @@ class Cube(Model):
 
     def check_hit(self, origin, direction):
         return self.__colision.check_hit(origin, direction)
+   
+    def update(self, delta_time):
+        """
+        Actualiza la rotación del cubo para crear una animación.
+        """
+        if self.animated:
+            self.rotation.x += 30 * delta_time  # 30 grados por segundo en X
+            self.rotation.y += 45 * delta_time  # 45 grados por segundo en Y
+            self.rotation.z += 20 * delta_time  # 20 grados por segundo en Z
    
     def get_model_matrix(self):
         model = glm.mat4(1)

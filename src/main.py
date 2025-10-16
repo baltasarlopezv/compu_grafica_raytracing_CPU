@@ -7,12 +7,11 @@ from camera import Camera
 from cube import Cube
 from quad import Quad
 
-
+# -- Configuración de ventana --
 WIDTH, HEIGHT = 800, 600
 
-
-SCENE_TYPE = "gpu"  # Opciones: "normal", "cpu", "gpu"
-
+# Opciones: "normal" (raycasting), "cpu" (raytracing CPU), "gpu" (raytracing GPU)
+SCENE_TYPE = "cpu"
 
 scene_configs = {
     "normal": {
@@ -32,59 +31,58 @@ scene_configs = {
     }
 }
 
-
 config = scene_configs[SCENE_TYPE]
 
-
+# -- Ventana --
 window = Window(WIDTH, HEIGHT, f"Basic Graphic Engine - {SCENE_TYPE.upper()}")
 
-
+# -- Shaders --
 shader = ShaderProgram(window.ctx, 'shaders/basic.vert', 'shaders/basic.frag')
 shader_sprite = ShaderProgram(window.ctx, 'shaders/sprite.vert', 'shaders/sprite.frag')
 
-
+# -- Texturas y Materiales --
 albedo_red = Texture("u_texture", WIDTH, HEIGHT, 3, None, (200, 10, 190))
 albedo_blue = Texture("u_texture", WIDTH, HEIGHT, 3, None, (0, 0, 255))
 albedo_pearl = Texture("u_texture", WIDTH, HEIGHT, 3, None, (120, 90, 90))
-sprite_texture = Texture(width=WIDTH, height=HEIGHT, channels_amount= config["sprite_channels_amount"], color= config["sprite_default_color"])
-
+sprite_texture = Texture(width=WIDTH, height=HEIGHT, channels_amount=config["sprite_channels_amount"], color=config["sprite_default_color"])
 
 material_plastic = StandardMaterial(shader, albedo_red, reflectivity=0.0)
 material_glass = StandardMaterial(shader, albedo_blue, reflectivity=0.2)
 material_ceramic = StandardMaterial(shader, albedo_pearl, reflectivity=0.1)
 material_sprite = Material(shader_sprite, textures_data=[sprite_texture])
 
+# -- Objetos - Dos cubos --
+cube1 = Cube((-2, 0, 0), (0, 45, 0), (1, 1, 1), name="Cube1")
+cube2 = Cube((2, 0, 0), (0, 45, 0), (1, 0.5, 1), name="Cube2")
+quad = Quad((0, -2, -3), (-90, 0, 0), (6, 6, 1), name="Floor", animated=False)
+sprite = Quad((0, 0, 0), (0, 0, 0), (6, 5, 1), name="Sprite", animated=False, hittable=False)
 
-cube1 = Cube((2, 0, 5), (0, 0, 0), (1, 1, 1), name="Cube1")
-cube2 = Cube((-2, 0, 5), (0, 0, 0), (1, 1, 1), name="Cube2")
-quad = Quad((0, -3, 0), (-90, 0, 0), (10, 15, 1), name="Floor", animated=False)
-sprite = Quad((0, 0, 0), (0, 0, 0), (10, 15, 1), name="Sprite", animated=False, hittable=False)
-
-
-camera = Camera((0, 0, 15), (0, 0, 0), (0, 1, 0), 45, WIDTH / HEIGHT, 0.01, 100.0)
+# -- Cámara --
+camera = Camera((0, 0, 5), (0, 0, 0), (0, 1, 0), 45, WIDTH / HEIGHT, 0.1, 100.0)
 camera.set_sky_colors(top=(16, 150, 222), bottom=(181, 224, 247))
 
-
+# -- Escena --
 if SCENE_TYPE == "normal":
+    # Raycasting básico
     scene = Scene(window.ctx, camera)
     scene.add_object(cube1, material_plastic)
     scene.add_object(cube2, material_glass)
 
-
 elif SCENE_TYPE == "cpu":
+    # Raytracing con CPU
     scene = RayScene(window.ctx, camera, WIDTH, HEIGHT)
     scene.add_object(sprite, material_sprite)
     scene.add_object(cube1, material_plastic)
     scene.add_object(cube2, material_glass)
     scene.add_object(quad, material_ceramic)
 
-
 elif SCENE_TYPE == "gpu":
+    # Raytracing con GPU
     scene = RaySceneGPU(window.ctx, camera, WIDTH, HEIGHT, sprite, material_sprite)
     scene.add_object(cube1, material_plastic)
     scene.add_object(cube2, material_glass)
     scene.add_object(quad, material_ceramic)
 
-
+# -- Ejecutar --
 window.set_scene(scene)
 window.run()

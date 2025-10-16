@@ -5,7 +5,11 @@ import math
 import numpy as np
 from raytracer import RayTracerGPU
 from graphics import ComputeGraphics
+
 class Scene:
+    """
+    Escena básica con renderizado tradicional (raycasting).
+    """
     def __init__(self, ctx, camera):
         self.ctx = ctx
         self.objects = []
@@ -16,6 +20,7 @@ class Scene:
         self.projection = self.camera.get_perspective_matrix()
     
     def add_object(self, model, material):
+        """Agrega un objeto a la escena."""
         self.objects.append(model)
         self.graphics[model.name] = Graphics(self.ctx, model, material)
     
@@ -29,16 +34,19 @@ class Scene:
                 print(f"¡Golpeaste al objeto {obj.name}!")
     
     def render(self):
-        # Clear the screen
+        # Limpiar la pantalla
         self.ctx.clear(0.1, 0.1, 0.1, 1.0)
         self.ctx.enable(self.ctx.DEPTH_TEST)
         
-        self.time += 0.01
+        # Delta time fijo para animaciones suaves
+        delta_time = 0.016  # ~60 FPS
+        
         for obj in self.objects:
-            if(obj.animated):
-                obj.rotation += glm.vec3(0.8, 0.6, 0.4)
-                obj.position.x += math.sin(self.time) * 0.01
+            # Actualizar animación del objeto
+            if hasattr(obj, 'update'):
+                obj.update(delta_time)
             
+            # Renderizar objeto
             model = obj.get_model_matrix()
             mvp = self.projection * self.view * model
             self.graphics[obj.name].render({'Mvp': mvp})
@@ -94,11 +102,14 @@ class RaySceneGPU(Scene):
         self._matrix_to_ssbo()
 
     def render(self):
-        self.time += 0.01
+        # Delta time fijo para animaciones suaves
+        delta_time = 0.016  # ~60 FPS
+        
         for obj in self.objects:
-            if(obj.animated):
-                obj.rotation += glm.vec3(0.8, 0.6, 0.4)
-                obj.position.x += math.sin(self.time) * 0.01
+            # Actualizar animación del objeto
+            if hasattr(obj, 'update'):
+                obj.update(delta_time)
+        
         if(self.raytracer is not None):
             self._update_matrix()
             self._matrix_to_ssbo()

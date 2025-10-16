@@ -51,15 +51,15 @@ class RayTracerGPU:
         self.compute_shader.set_uniform("inverseViewMatrix", self.camera.get_inverse_view_matrix())
         self.compute_shader.set_uniform("fieldOfView", self.camera.fov)
 
-    def matrix_to_ssbo(self, matrix, binding = 0):
-        buffer = self.ctx.buffer(matrix.totytes())
-        buffer.bind_to_storage_buffer(binding = binding)
+    def matrix_to_ssbo(self, matrix, binding=0):
+        buffer = self.ctx.buffer(matrix.tobytes())
+        buffer.bind_to_storage_buffer(binding=binding)
     
-    def primitives_to_ssbo(self, primitives, binding = 3):
-        self.bvh_nodes =  BVH(primitives)
+    def primitives_to_ssbo(self, primitives, binding=3):
+        self.bvh_nodes = BVH(primitives)
         self.bvh_ssbo = self.bvh_nodes.pack_to_bytes()
         buf_bvh = self.ctx.buffer(self.bvh_ssbo)
-        buf_bvh.bind_to_storage_buffer(binding = binding)
+        buf_bvh.bind_to_storage_buffer(binding=binding)
 
     def run(self):
         groups_x = (self.width + 15) // 16

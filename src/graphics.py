@@ -53,32 +53,32 @@ class Graphics:
         texture_ctx.write(texture_obj.get_bytes())
 
 class ComputeGraphics(Graphics):
-    def __innit__(self, ctx, model, material):
+    def __init__(self, ctx, model, material):
         self.__ctx = ctx
         self.__model = model
         self.__material = material
         self.textures = material.textures_data
-        super().__innit__(ctx, model, material)
+        super().__init__(ctx, model, material)
 
     def create_primitive(self, primitives):
         amin, amax = self.__model.aabb
         primitives.append({"aabb_min": amin, "aabb_max": amax})
 
-    def create_transformation_matrix(self, transformations_matrix, index):
+    def create_transformation_matrix(self, trasnformation_matrix, index):
         m = self.__model.get_model_matrix()
-        transformations_matrix[index, :] = np.array(m.to_list(), dtype='f4').reshape(16)
-
-    def create_inverse_matrix(self, inverse_matrix, index):
+        trasnformation_matrix[index, :] = np.array(m.to_list(), dtype="f4").reshape(16)
+    
+    def create_inverse_transformation_matrix(self, inverse_transformations_matrix, index):
         m = self.__model.get_model_matrix()
-        inv = glm.inverse(m)
-        inverse_matrix[index, :] = np.array(inv.to_list(), dtype='f4').reshape(16)
+        inverse = glm.inverse(m)
+        inverse_transformations_matrix[index, :] = np.array(inverse.to_list(), dtype="f4").reshape(16)
 
     def create_material_matrix(self, materials_matrix, index):
         reflectivity = self.__material.reflectivity
-        r,g,b = self.__material.colorRGB
+        r, g, b = self.__material.colorRGB
 
         r = r / 255.0 if r > 1.0 else r
         g = g / 255.0 if g > 1.0 else g
         b = b / 255.0 if b > 1.0 else b
 
-        materials_matrix[index, :] = np.array([r, g, b, reflectivity], dtype='f4')
+        materials_matrix[index, :] = np.array([r, g, b, reflectivity], dtype="f4")

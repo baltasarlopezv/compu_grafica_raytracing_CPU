@@ -69,7 +69,7 @@ class RayScene(Scene):
 class RaySceneGPU(Scene):
     def __init__(self, ctx, camera, width, height, output_model, output_material):
         self.ctx = ctx
-        self.camera
+        self.camera = camera
         self.width = width
         self.height = height
         self.raytracer = None
@@ -88,7 +88,7 @@ class RaySceneGPU(Scene):
         n = len(self.objects)
         self.models_f = np.zeros((n, 16), dtype='f4')
         self.inv_f = np.zeros((n, 16), dtype='f4')
-        self.mats_f = np.zeros((n, 8), dtype='f4')  # reflectividad + colorRGB
+        self.mats_f = np.zeros((n, 4), dtype='f4')  # reflectividad + colorRGB
 
         self._update_matrix()
         self._matrix_to_ssbo()
@@ -114,8 +114,8 @@ class RaySceneGPU(Scene):
 
         for i, (name, graphics) in enumerate(self.graphics.items()):
             graphics.create_primitive(self.primitives)
-            graphics.create_transformation_matrix(self.inv_f, i)
-            graphics.create_inverse_transformation_matrix(self.models_f, i)
+            graphics.create_transformation_matrix(self.models_f, i)
+            graphics.create_inverse_transformation_matrix(self.inv_f, i)
             graphics.create_material_matrix(self.mats_f, i)
 
     def _matrix_to_ssbo(self):

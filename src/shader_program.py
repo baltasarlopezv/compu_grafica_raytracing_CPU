@@ -53,10 +53,23 @@ class ShaderProgram:
 
 class ComputeShaderProgram:
     def __init__(self, ctx, compute_shader_path):
-        with open(compute_shader_path) as file:
+        # Ruta absoluta al directorio actual (donde está shader_program.py)
+        base_path = os.path.dirname(__file__)
+        
+        # Armar ruta completa al compute shader
+        compute_path = os.path.join(base_path, compute_shader_path)
+        
+        print("Compute shader:", os.path.abspath(compute_path))
+        
+        with open(compute_path) as file:
             compute_source = file.read()
         
-        self.prog = ctx.compute_shader(compute_source)
+        try:
+            self.prog = ctx.compute_shader(compute_source)
+        except Exception as e:
+            print(f"Error compiling compute shader: {e}")
+            print(f"Shader source:\n{compute_source}")
+            raise
         
         uniforms = []
         for name in self.prog:
